@@ -17,10 +17,10 @@
 """
 
 
-import numpy as np
+import numpy as _np
 
 
-def _numpy_float_type(val):
+def _np_float_type(val):
     if not val.dtype.kind == 'f':
         raise TypeError("Argument must be a NumPy binary float type. "
                         "Your argument has type ‘{}’.".format(val.dtype.name))
@@ -33,25 +33,25 @@ def _decompose(val):
     See https://stackoverflow.com/questions/46093123 for context.
 
     """
-    val_type = _numpy_float_type(val)
-    finfo = np.finfo(val_type)
-    negative = np.signbit(val)
-    int_type = np.dtype('i' + str(val_type.itemsize))
-    val_int = np.abs(val).view(int_type)  # discard sign (MSB now 0),
-                                          # view bit string as int
-    exponent = (val_int >> finfo.nmant) + finfo.minexp - 1  # drop significand
+    val_type = _np_float_type(val)
+    finfo = _np.finfo(val_type)
+    negative = _np.signbit(val)
+    int_type = _np.dtype('i' + str(val_type.itemsize))
+    val_int = _np.abs(val).view(int_type)  # discard sign (MSB now 0),
+                                           # view bit string as int
+    exponent = (val_int >> finfo.nmant)  # drop significand
     exponent -= finfo.maxexp - 1  # correct exponent offset
-    significand = val_int & np.array(2 ** finfo.nmant - 1, int_type)
-                            # second factor provides mask to extract significand
+    significand = val_int & _np.array(2 ** finfo.nmant - 1, int_type)
+                        # second factor provides mask to extract significand
     return (negative, exponent, significand)
 
 
 def _bounds(val_encoded, multiplier):
     """Extract tightest bounds on the original, non-encoded values"""
-    val_type = _numpy_float_type(val_encoded)
+    val_type = _np_float_type(val_encoded)
     err_bnd = error_bound(val_encoded)
-    pair = np.dtype([('lower', val_type), ('upper', val_type)])
-    bounds = np.array(dtype=pair, shape=val_encoded.shape)
+    pair = _np.dtype([('lower', val_type), ('upper', val_type)])
+    bounds = _np.empty(val_encoded.shape, pair)
     bounds['lower'] = val_encoded - multiplier * err_bnd / 2
     bounds['upper'] = val_encoded + multiplier * err_bnd / 2
     return bounds
@@ -59,61 +59,63 @@ def _bounds(val_encoded, multiplier):
 
 def encode(val, err):
     """Encode floats into convention format"""
-    val_type = _numpy_float_type(val)
-    if _numpy_float_type(err) != val_type:
-        err = np.array(err, val_type)
-    finfo = np.finfo(val_type)
-    err = np.abs(err)  # err is assumed to be one-sided
-    val_isneg = np.signbit(val)
-    val[val_isneg] *= -1  # remove sign
+    val_type = _np_float_type(val)
+    if _np_float_type(err) != val_type:
+        err = _np.array(err, val_type)
+    val_encoded = _np.copy(val)
+    err_bnd = _np.copy(err)
+    finfo = _np.finfo(val_type)
+    err_bnd = _np.abs(err)  # err is assumed to be one-sided
+    val_isneg = _np.signbit(val)
+    val_encoded[val_isneg] *= -1  # remove sign
     # we will not change NaN or infinity
-    val_isnum = ~(np.isnan(val) | np.isinf(val))
+    val_isnum = ~(_np.isnan(val) | _np.isinf(val))
     # avoid errs that are too small or NaN
-    err = np.fmax(err[val_isnum],
-                  2 * np.fmax(finfo.tiny, val[val_isnum] * finfo.eps))
-    err_bnd = 2 ** np.floor(np.log2(err))
-    val[val_isnum] = (2 * np.floor(val[val_isnum] / err_bnd) + 1) * err_bnd / 2
-    val[val_isneg] *= -1  # restore sign
-    return val
+    err_bnd = _np.fmax(err_bnd[val_isnum],
+                       2 * _np.fmax(finfo.tiny, val_encoded[val_isnum] * finfo.eps))
+    err_bnd = 2 ** _np.floor(_np.log2(err_bnd))
+    val_encoded[val_isnum] = (2 * _np.floor(val_encoded[val_isnum] / err_bnd) + 1) * err_bnd / 2
+    val_encoded[val_isneg] *= -1  # restore sign
+    return val_encoded
 
 
 def error_bound(val_encoded):
     """Extract the error bound of encoded values"""
-    val_type = _numpy_float_type(val_encoded)
-    finfo = np.finfo(val_type)
-    val_isnum = ~(np.isnan(val_encoded) | np.isinf(val_encoded))
-    err_bnd = np.nan * np.ones(val_encoded.shape)  # return NaN for NaN and infinity
+    val_type = _np_float_type(val_encoded)
+    finfo = _np.finfo(val_type)
+    val_isnum = ~(_np.isnan(val_encoded) | _np.isinf(val_encoded))
+    err_bnd = _np.nan * _np.ones(val_encoded.shape)  # return NaN for NaN and infinity
     negative, exponent, significand = _decompose(val_encoded[val_isnum])
     if any(exponent == finfo.minexp - 1):  # subnormals (including zero)
         raise ValueError("Zero or subnormal value detected in input; "
                          "these cannot be generated under our convention.")
-    significand_isnonzero = significand != 0
-    nonzero_significand = significand[significand_isnonzero]
-    err_exponent = exponent
-    err_exponent[significand_isnonzero] -= finfo.nmant
-    err_exponent[significand_isnonzero] += np.log2(nonzero_significand
-                                                   & -nonzero_significand)
+    err_exponent = exponent.astype(val_type)
+    b = significand != 0
+    err_exponent[b] -= _np.array(finfo.nmant, val_type)
+    err_exponent[b] += _np.log2(
+                          (significand[b] & -significand[b]).astype(val_type))
             # for v & -v trick, see https://stackoverflow.com/questions/18806481
-    err_bnd[val_isnum] = 2 ** err_exponent
+    err_bnd[val_isnum] = 2 * 2 ** err_exponent
     return err_bnd
 
 
-def value_bounds(val_encoded):
+def inner_bounds(val_encoded):
     """Extract tightest bounds on the original, non-encoded values"""
     return _bounds(val_encoded, 1)
 
 
-def error_bounds(val_encoded):
+def outer_bounds(val_encoded):
     """Extract tightest bounds on the original, non-encoded error intervals"""
     return _bounds(val_encoded, 5)
 
 
 def round_decimal(val_encoded):
     """Decimal round values so that they can be re-encoded without loss"""
+    val_type = _np_float_type(val_encoded)
+    pair = _np.dtype([('value', val_type), ('error', val_type)])
     err_bnd = error_bound(val_encoded)
-    pair = np.dtype([('value', val_type), ('error', val_type)])
-    val_err = np.array(dtype=pair, shape=val_encoded.shape)
+    val_err = _np.empty(val_encoded.shape, pair)
     val_err['error'] = err_bnd
-    dec_err_bnd = 10 ** np.floor(np.log10(err_bnd))
-    val_err['value'] = np.round(val_encoded / dec_err_bnd) * dec_err_bnd
+    dec_err_bnd = 10 ** _np.floor(_np.log10(err_bnd))
+    val_err['value'] = _np.round(val_encoded / dec_err_bnd) * dec_err_bnd
     return val_err
