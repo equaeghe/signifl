@@ -66,6 +66,8 @@ def encode(val, err):
     err_bnd = _np.copy(err)
     finfo = _np.finfo(val_type)
     err_bnd = _np.abs(err)  # err is assumed to be one-sided
+    if _np.isscalar(err_bnd):
+        err_bnd = err_bnd * _np.ones(val_encoded.shape)
     val_isneg = _np.signbit(val)
     val_encoded[val_isneg] *= -1  # remove sign
     # we will not change NaN or infinity
