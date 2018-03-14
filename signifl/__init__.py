@@ -46,14 +46,14 @@ def _decompose(val):
     return (negative, exponent, significand)
 
 
-def _bounds(val_encoded, multiplier):
+def _bounds(val_enc, multiplier):
     """Extract tightest bounds on the original, non-encoded values"""
-    val_type = _np_float_type(val_encoded)
-    err_bnd = error_bound(val_encoded)
+    val_type = _np_float_type(val_enc)
+    err_bnd = error_bound(val_enc)
     pair = _np.dtype([('lower', val_type), ('upper', val_type)])
-    bounds = _np.empty(val_encoded.shape, pair)
-    bounds['lower'] = val_encoded - multiplier * err_bnd / 2
-    bounds['upper'] = val_encoded + multiplier * err_bnd / 2
+    bounds = _np.empty(val_enc.shape, pair)
+    bounds['lower'] = val_enc - multiplier * err_bnd / 2
+    bounds['upper'] = val_enc + multiplier * err_bnd / 2
     return bounds
 
 
@@ -62,32 +62,32 @@ def encode(val, err):
     val_type = _np_float_type(val)
     if _np_float_type(err) != val_type:
         err = _np.array(err, val_type)
-    val_encoded = _np.copy(val)
+    val_enc = _np.copy(val)
     err_bnd = _np.copy(err)
     finfo = _np.finfo(val_type)
     err_bnd = _np.abs(err)  # err is assumed to be one-sided
     if _np.isscalar(err_bnd):
-        err_bnd = err_bnd * _np.ones(val_encoded.shape)
+        err_bnd = err_bnd * _np.ones(val_enc.shape)
     val_isneg = _np.signbit(val)
-    val_encoded[val_isneg] *= -1  # remove sign
+    val_enc[val_isneg] *= -1  # remove sign
     # we will not change NaN or infinity
     val_isnum = ~(_np.isnan(val) | _np.isinf(val))
     # avoid errs that are too small or NaN
     err_bnd = _np.fmax(err_bnd[val_isnum],
-                       2 * _np.fmax(finfo.tiny, val_encoded[val_isnum] * finfo.eps))
+                       2 * _np.fmax(finfo.tiny, val_enc[val_isnum] * finfo.eps))
     err_bnd = 2 ** _np.floor(_np.log2(err_bnd))
-    val_encoded[val_isnum] = (2 * _np.floor(val_encoded[val_isnum] / err_bnd) + 1) * err_bnd / 2
-    val_encoded[val_isneg] *= -1  # restore sign
-    return val_encoded
+    val_enc[val_isnum] = (2 * _np.floor(val_enc[val_isnum] / err_bnd) + 1) * err_bnd / 2
+    val_enc[val_isneg] *= -1  # restore sign
+    return val_enc
 
 
-def error_bound(val_encoded):
+def error_bound(val_enc):
     """Extract the error bound of encoded values"""
-    val_type = _np_float_type(val_encoded)
+    val_type = _np_float_type(val_enc)
     finfo = _np.finfo(val_type)
-    val_isnum = ~(_np.isnan(val_encoded) | _np.isinf(val_encoded))
-    err_bnd = _np.nan * _np.ones(val_encoded.shape)  # return NaN for NaN and infinity
-    negative, exponent, significand = _decompose(val_encoded[val_isnum])
+    val_isnum = ~(_np.isnan(val_enc) | _np.isinf(val_enc))
+    err_bnd = _np.nan * _np.ones(val_enc.shape)  # return NaN for NaN and infinity
+    negative, exponent, significand = _decompose(val_enc[val_isnum])
     if any(exponent == finfo.minexp - 1):  # subnormals (including zero)
         raise ValueError("Zero or subnormal value detected in input; "
                          "these cannot be generated under our convention.")
@@ -101,23 +101,38 @@ def error_bound(val_encoded):
     return err_bnd
 
 
-def inner_bounds(val_encoded):
+def inner_bounds(val_enc):
     """Extract tightest bounds on the original, non-encoded values"""
-    return _bounds(val_encoded, 1)
+    return _bounds(val_enc, 1)
 
 
-def outer_bounds(val_encoded):
+def outer_bounds(val_enc):
     """Extract tightest bounds on the original, non-encoded error intervals"""
-    return _bounds(val_encoded, 5)
+    return _bounds(val_enc, 5)
 
 
-def round_decimal(val_encoded):
+def greater_than(val_enc_lhs, val_enc_rhs):
+    """Determine which values are greater in a significant way"""
+    return outer_bounds(val_enc_lhs)['lower'] > outer_bounds(val_enc_rhs)['upper']
+
+
+def less_than(val_enc_lhs, val_enc_rhs):
+    """Determine which values are less in a significant way"""
+    return greater_than(val_enc_lhs, val_enc_rhs)
+
+
+def incomparable(val_enc_lhs, val_enc_rhs):
+    """Determine which values are incomparable in a significant way"""
+    return ~(greater_than(val_enc_rhs, val_enc_lhs) |
+             less_than(val_enc_lhs, val_enc_rhs))
+
+def round_decimal(val_enc):
     """Decimal round values so that they can be re-encoded without loss"""
-    val_type = _np_float_type(val_encoded)
+    val_type = _np_float_type(val_enc)
     pair = _np.dtype([('value', val_type), ('error', val_type)])
-    err_bnd = error_bound(val_encoded)
-    val_err = _np.empty(val_encoded.shape, pair)
+    err_bnd = error_bound(val_enc)
+    val_err = _np.empty(val_enc.shape, pair)
     val_err['error'] = err_bnd
     dec_err_bnd = 10 ** _np.floor(_np.log10(err_bnd))
-    val_err['value'] = _np.round(val_encoded / dec_err_bnd) * dec_err_bnd
+    val_err['value'] = _np.round(val_enc / dec_err_bnd) * dec_err_bnd
     return val_err
