@@ -1,7 +1,9 @@
 signifl is a Python package for working with IEEE-753 binary floating point
 numbers that carry significance information by using a specific convention
 
-## Installation
+
+Installation
+============
 
 Currently, you have to clone this repository and then locally install the
 package:
@@ -9,21 +11,25 @@ package:
     $ cd path/to/local/copy/of/repo
     $ pip install --user .
 
-## Usage
 
-The public functions in the main code file, `signifl/__init__.py` contain
+Usage
+=====
+
+The public functions in the main code file, ``signifl/__init__.py`` contain
 docstrings that should get you started. Any modern Python shell will happily
-tell you which functions there are after `import signifl as sf` by
-tab-completing `sf.`.
+tell you which functions there are after ``import signifl as sf`` by
+tab-completing ``sf.``.
 
-## Background documentation
+
+Background documentation
+========================
 
 *(This is an edited excerpt from a paper in preparation.)*
 
 Consider *x±ε*, a floating point number with its uncertainty.
 Assume *x* is positive, otherwise apply negation first.
 Define *δ* by *lb(δ)=⌊lb(ε)⌋*, so that *δ* provides tight power-of-two bounds on *ε*; namely *δ≤ε<2δ*.
-Then we store *y = (2⌊x/δ⌋+1)δ/2* instead of *x*; it is the odd multiple of *δ/2* nearest to *x*,[#nearest] so *|x-y|≤δ/2*.
+Then we store *y = (2⌊x/δ⌋+1)δ/2* instead of *x*; it is the odd multiple of *δ/2* nearest to *x*,[#nearest]_ so *|x-y|≤δ/2*.
 Because *y* is an odd multiple of a power of two, the denominator of *y* seen as an irreducable fraction is *2/δ*, so that *δ* can effectively be determined from *y*.
 
 Let us illustrate our convention with an example.
@@ -57,13 +63,15 @@ There do exist unnormalized decimal floating point formats that encode the numbe
 A standardized unnormalized binary floating point format would be useful; we have contacted the standardization committee about this (without any real reaction).
 Also Dufour [Dufour2017]_, to get around the lack of standardized unnormalized binary floating point format the context of a proposal for significance arithmetic, introduces an encoding where trailing zeros are considered insignificant; but unlike us, he considers the final *1* insignificant as well, reducing compatibility with the standard binary floating point format.
 
----
 
-.. [#nearest] When *x* is a multiple of *δ*, there are two odd multiples of *δ/2* nearest to *x*.
-In that case the definition selects the one with the largest magnitude.
+.. [#nearest] When *x* is a multiple of *δ*, there are two odd multiples of
+    *δ/2* nearest to *x*. In that case the definition selects the one with the
+    largest magnitude.
 
-.. [IEEE-753] Cowlishaw, Mike, ed. (2008). IEEE Standard for Floating-Point Arithmetic. IEEE Std 754-2008.
-IEEE. 70 pp. isbn: 978-0-7381-5752-8. url: http://dx.doi.org/10.1109/IEEESTD.2008.4610935.
+.. [IEEE-753] Cowlishaw, Mike, ed. (2008). IEEE Standard for Floating-Point
+    Arithmetic. IEEE Std 754-2008.
+    http://dx.doi.org/10.1109/IEEESTD.2008.4610935.
 
-.. [Dufour2017] Defour, David (2017). FP-ANR: A representation format to handle floating-point cancellation at
-run-time. Research rep. lirmm-01549601. Version 1. url: https://hal-lirmm.ccsd.cnrs.fr/lirmm-01549601.
+.. [Dufour2017] Defour, David (2017). FP-ANR: A representation format to handle
+    floating-point cancellation at run-time. Research rep. lirmm-01549601.
+    Version 1. https://hal-lirmm.ccsd.cnrs.fr/lirmm-01549601.
