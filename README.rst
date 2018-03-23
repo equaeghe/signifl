@@ -1,4 +1,4 @@
-**signifl** is a Python package for working with IEEE-753 binary floating-point
+**signifl** is a Python package for working with IEEE-754 binary floating-point
 numbers that carry significance information by using a specific convention
 
 
@@ -71,7 +71,7 @@ convention, as order reversal—i.e., ``y¯>y⁺``—is possible when applying i
 ``ε¯+ε⁺`` is sufficiently large compared to ``|x¯-x⁺|``.
 
 A convention such as ours is necessary because the standardized binary floating
-point formats ([IEEE-753]_, §3.4) are all normalized and can therefore not
+point formats ([IEEE-754]_, §3.4) are all normalized and can therefore not
 encode a number of significant binary digits—i.e., bits. To wit, apart from
 some special cases, such floating point numbers are effectively of the form
 ``1.s·2^e``, where ``e`` is an integer exponent and ``s`` is a fixed-length
@@ -80,7 +80,7 @@ having an initial string of zero bits that reduces the number of remaining,
 significant bits.
 
 There do exist unnormalized decimal floating point formats that encode the
-number of significant decimal digits ([IEEE-753]_, §3.5), but power-of-ten
+number of significant decimal digits ([IEEE-754]_, §3.5), but power-of-ten
 magnitudes are rather crude. A standardized unnormalized binary floating point
 format would be useful; we have contacted the standardization committee about
 this (without any real reaction). Also Dufour [D17]_, to get around the
@@ -98,7 +98,7 @@ point format.
     ``δ/2`` nearest to ``x``. In that case the definition selects the one with
     the largest magnitude.
 
-.. [IEEE-753] Cowlishaw, Mike, ed. (2008). IEEE Standard for Floating-Point
+.. [IEEE-754] Cowlishaw, Mike, ed. (2008). IEEE Standard for Floating-Point
     Arithmetic. IEEE Std 754-2008.
     http://dx.doi.org/10.1109/IEEESTD.2008.4610935.
 
