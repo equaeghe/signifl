@@ -1,5 +1,5 @@
-**``signifl``** is a Python package for working with IEEE-753 binary floating
-point numbers that carry significance information by using a specific convention
+**signifl** is a Python package for working with IEEE-753 binary floating-point
+numbers that carry significance information by using a specific convention
 
 
 Installation
@@ -26,7 +26,8 @@ tab-completing ``sf.``.
 Background documentation
 ========================
 
-*(This is an edited excerpt from a paper in preparation.)*
+*(This is an edited excerpt from a paper in preparation where this is just a
+side-aspect. We will add a citable reference here once it is available.)*
 
 Consider ``x±ε``, a floating point number with its uncertainty. Assume ``x`` is
 positive, otherwise apply negation first. Define ``δ`` by ``lb(δ) = ⌊lb(ε)⌋``,
