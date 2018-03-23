@@ -1,5 +1,5 @@
-signifl is a Python package for working with IEEE-753 binary floating point
-numbers that carry significance information by using a specific convention
+**``signifl``** is a Python package for working with IEEE-753 binary floating
+point numbers that carry significance information by using a specific convention
 
 
 Installation
@@ -7,6 +7,8 @@ Installation
 
 Currently, you have to clone this repository and then locally install the
 package:
+
+::
 
     $ cd path/to/local/copy/of/repo
     $ pip install --user .
