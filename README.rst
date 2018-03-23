@@ -27,12 +27,13 @@ Background documentation
 *(This is an edited excerpt from a paper in preparation.)*
 
 Consider ``x±ε``, a floating point number with its uncertainty. Assume ``x`` is
-positive, otherwise apply negation first. Define ``δ`` by ``lb(δ)=⌊lb(ε)⌋``, so
-that ``δ`` provides tight power-of-two bounds on ``ε``; namely ``δ≤ε<2δ``. Then
-we store ``y = (2⌊x/δ⌋+1)δ/2`` instead of ``x``; it is the odd multiple of
-``δ/2`` nearest to ``x``,[#nearest]_ so ``|x-y|≤δ/2``. Because ``y`` is an odd
-multiple of a power of two, the denominator of ``y`` seen as an irreducable
-fraction is ``2/δ``, so that ``δ`` can effectively be determined from ``y``.
+positive, otherwise apply negation first. Define ``δ`` by ``lb(δ) = ⌊lb(ε)⌋``,
+so that ``δ`` provides tight power-of-two bounds on ``ε``; namely
+``δ ≤ ε < 2δ``. Then we store ``y = (2⌊x/δ⌋+1)δ/2`` instead of ``x``; it is the
+odd multiple of ``δ/2`` nearest to ``x``, [#nearest]_ so ``|x-y|≤δ/2``. Because
+``y`` is an odd multiple of a power of two, the denominator of ``y`` seen as an
+irreducable fraction is ``2/δ``, so that ``δ`` can effectively be determined
+from ``y``.
 
 Let us illustrate our convention with an example. Suppose ``x = 0.65432`` and
 ``ε = 0.05``. Then ``⌊lb(ε)⌋ = -5`` and thus ``δ = 1/2⁵ = 1/32 = 0.03125``, so
